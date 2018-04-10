@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en-US" dir="ltr">
+	<head>
+		<title>To Do List</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+		<link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+		<link href="css/style.css" rel="stylesheet" type="text/css">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge;chrome=1">
+		<link rel="icon" href="img/favicon.png" type="image/png" sizes="16x16">
+	</head>
+	<body>
+	<div class="container">
+		<div class="row">
+			<div class="col-xs-12" id="form">
+				<form class="form-horizontal" name="forms" id="forms">
+					<h1 class="text-center">To Do List</h1>
+					<div class="form-group">
+						<div class="col-sm-4">
+							<label class="control-label" for="title">Title:</label>
+						</div>
+						<div class="col-sm-8">
+							<input class="form-control" type="text" name="title" id="title" placeholder="title">
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-4">
+							<label class="control-label" for="date">Date:</label>
+						</div>
+						<div class="col-sm-8">
+							<input class="form-control" type="datetime-local" name="date" id="date">
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-4">
+							<label class="control-label" for="description">Description:</label>
+						</div>
+						<div class="col-sm-8">
+							<textarea class="form-control" name="description" id="description" placeholder="description"></textarea>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-6">
+							<input type="button" name="save" id="save" value="Save" class="btn btn-success btn-block" onclick="saveEvent()">
+						</div>
+						<div class="col-sm-6">
+							<input type="button" name="cancel" id="cancel" value="Cancel" class="btn btn-danger btn-block" onclick="cancelEvent()">
+						</div>
+					</div>
+					<div class="form-group" id="delete">
+						<div class="col-sm-12">
+							<input type="button" name="delete" value="Delete all events" class="btn btn-danger btn-block" onclick="deleteAllEvents()">
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+		<div class="row" id="list"></div>
+	</div>
+	<script>
+		listEvents();
+		
+		function listEvents() {
+			var keys = Object.keys(localStorage),
+				datas = "";
+			
+			if (keys.length > 0) {
+				for (var i = 0; i < keys.length; i++) {
+					var key = keys[i],
+						data = JSON.parse(localStorage.getItem(key)),
+						title = data.title,
+						date = data.date,
+						description = data.description;
+					
+					date = date.split("T");
+					date = date[0] + ". " + date[1];
+					date = date.replace('-', '.').replace('-', '.');
+					
+					if (description !== "") {
+						datas += '<div class="col-xs-12 item" id="item_' + key + '"><div class="row"><div class="col-sm-4 item-details">Title:</div><div class="col-sm-8">' + title + '</div></div><div class="row"><div class="col-sm-4 item-details">Date:</div><div class="col-sm-8">' + date + '</div></div><div class="row"><div class="col-sm-4 item-details">Description:</div><div class="col-sm-8">' + description + '</div></div><div class="row"><div class="col-sm-6"><input type="button" class="btn btn-success btn-block" value="Edit" onclick="editEvent(' + key + ')"></div><div class="col-sm-6"><input type="button" class="btn btn-danger btn-block" value="Remove" onclick="removeEvent(' + key + ')"></div></div></div>';
+					}
+					else {
+						datas += '<div class="col-xs-12 item" id="item_' + key + '"><div class="row"><div class="col-sm-4 item-details">Title:</div><div class="col-sm-8">' + title + '</div></div><div class="row"><div class="col-sm-4 item-details">Date:</div><div class="col-sm-8">' + date + '</div></div><div class="row"><div class="col-sm-6"><input type="button" class="btn btn-success btn-block" value="Edit" onclick="editEvent(' + key + ')"></div><div class="col-sm-6"><input type="button" class="btn btn-danger btn-block" value="Remove" onclick="removeEvent(' + key + ')"></div></div></div>';
+					}
+				}
+				
+				document.getElementById("delete").style.display = "block";
+			}
+			else {
+				datas = '<div class="col-xs-12 item"><div class="row"><div class="col-xs-12 text-center"><b>The list is empty yet.</b></div></div></div>';
+				document.getElementById("delete").style.display = "none";
+			}
+			
+			document.getElementById("list").innerHTML = datas;
+		}
+		
+		function saveEvent() {
+			var key = Date.now(),
+				title = document.getElementById("title").value,
+				date = document.getElementById("date").value,
+				description = document.getElementById("description").value;
+			
+			if (title === "") {
+				$.confirm({
+					title: "Warning!",
+					text: "The title is missing!",
+					cancelButton: false,
+					confirmButton: "Ok",
+					confirmButtonClass: "btn-success",
+					dialogClass: "modal-dialog",
+					modalOptionsBackdrop: 'static'
+				});
+			}
+			else if (date === "") {
+				$.confirm({
+					title: "Warning!",
+					text: "The date is missing!",
+					cancelButton: false,
+					confirmButton: "Ok",
+					confirmButtonClass: "btn-success",
+					dialogClass: "modal-dialog",
+					modalOptionsBackdrop: 'static'
+				});
+			}
+			else {
+				var event = {
+					"title": title,
+					"date": date,
+					"description": description
+				};
+				
+				localStorage.setItem(key, JSON.stringify(event));
+				
+				document.getElementById("title").value = "";
+				document.getElementById("date").value = "";
+				document.getElementById("description").value = "";
+				
+				listEvents();
+			}
+		}
+		
+		function editEvent(key) {
+			var data = JSON.parse(localStorage.getItem(key)),
+				title = data.title,
+				date = data.date,
+				description = data.description;
+			
+			document.getElementById("title").value = title;
+			document.getElementById("date").value = date;
+			document.getElementById("description").value = description;
+			document.getElementById("save").value = "Update";
+			document.getElementById("save").setAttribute('onclick', 'updateEvent(' + key + ')');
+			document.getElementById("title").focus();
+		}
+		
+		function updateEvent(key) {
+			var title = document.getElementById("title").value,
+				date = document.getElementById("date").value,
+				description = document.getElementById("description").value;
+			
+			if (title === "") {
+				$.confirm({
+					title: "Warning!",
+					text: "The title is missing!",
+					cancelButton: false,
+					confirmButton: "Ok",
+					confirmButtonClass: "btn-success",
+					dialogClass: "modal-dialog",
+					modalOptionsBackdrop: 'static'
+				});
+			}
+			else if (date === "") {
+				$.confirm({
+					title: "Warning!",
+					text: "The date is missing!",
+					cancelButton: false,
+					confirmButton: "Ok",
+					confirmButtonClass: "btn-success",
+					dialogClass: "modal-dialog",
+					modalOptionsBackdrop: 'static'
+				});
+			}
+			else {
+				var event = {
+					"title": title,
+					"date": date,
+					"description": description
+				};
+				
+				localStorage.setItem(key, JSON.stringify(event));
+				
+				document.getElementById("title").value = "";
+				document.getElementById("date").value = "";
+				document.getElementById("description").value = "";
+				document.getElementById("save").value = "Save";
+				document.getElementById("save").setAttribute('onclick', 'save()');
+				
+				listEvents();
+			}
+		}
+		
+		function removeEvent(key) {
+			var data = JSON.parse(localStorage.getItem(key)),
+				title = data.title;
+			
+			$.confirm({
+				title: "Confirmation required",
+				text: 'Do you really want to delete "' + title + '"?',
+				confirmButton: "Yes",
+				cancelButton: "No",
+				confirmButtonClass: "btn-success",
+				cancelButtonClass: "btn-danger",
+				dialogClass: "modal-dialog",
+				modalOptionsBackdrop: 'static',
+				confirm: function () {
+					localStorage.removeItem(key);
+					document.getElementById("item_" + key).style.display = "none";
+					
+					listEvents();
+				}
+			});
+		}
+		
+		function cancelEvent() {
+			var title = document.getElementById("title").value,
+				date = document.getElementById("date").value,
+				description = document.getElementById("description").value;
+			
+			if (title || date || description) {
+				$.confirm({
+					title: "Confirmation required",
+					text: "Do not want to save it?",
+					confirmButton: "Yes",
+					cancelButton: "No",
+					confirmButtonClass: "btn-success",
+					cancelButtonClass: "btn-danger",
+					dialogClass: "modal-dialog",
+					modalOptionsBackdrop: 'static',
+					cancel: function () {
+						document.getElementById("title").value = "";
+						document.getElementById("date").value = "";
+						document.getElementById("description").value = "";
+						document.getElementById("save").value = "Save";
+						document.getElementById("save").setAttribute('onclick', 'save()');
+					}
+				});
+			}
+		}
+		
+		function deleteAllEvents() {
+			$.confirm({
+				title: "Confirmation required",
+				text: "Do you really want to delete all items?",
+				confirmButton: "Yes",
+				cancelButton: "No",
+				confirmButtonClass: "btn-success",
+				cancelButtonClass: "btn-danger",
+				dialogClass: "modal-dialog",
+				modalOptionsBackdrop: 'static',
+				confirm: function () {
+					localStorage.clear();
+					
+					document.getElementById("title").value = "";
+					document.getElementById("date").value = "";
+					document.getElementById("description").value = "";
+					document.getElementById("save").value = "Save";
+					document.getElementById("save").setAttribute('onclick', 'save()');
+					
+					listEvents();
+				}
+			});
+		}
+	</script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.6/js/bootstrap.min.js"></script>
+	<script src="js/jquery.confirm.min.js"></script>
+	<script src="js/autosize.js"></script>
+	<script>
+		$(document).ready(function () {
+			autosize($("textarea"));
+		});
+	</script>
+	</body>
+</html>
